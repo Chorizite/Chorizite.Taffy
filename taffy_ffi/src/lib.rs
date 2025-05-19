@@ -12,13 +12,13 @@ use taffy::Overflow;
 pub struct c_TaffyTree {
 }
 
-#[unsafe(no_mangle)]
+#[no_mangle]
 pub extern "C" fn taffy_new() -> *mut TaffyTree {
     let tree = TaffyTree::new();
     Box::into_raw(Box::new(tree))
 }
 
-#[unsafe(no_mangle)]
+#[no_mangle]
 pub extern "C" fn taffy_new_with_children(tree: *mut TaffyTree, style: *const c_Style, children: *const u64, children_len: usize) -> u64 {
     if tree.is_null() || style.is_null() || children.is_null() {
         return 0;
@@ -39,7 +39,7 @@ pub extern "C" fn taffy_new_with_children(tree: *mut TaffyTree, style: *const c_
     }
 }
 
-#[unsafe(no_mangle)]
+#[no_mangle]
 pub extern "C" fn taffy_free(tree: *mut TaffyTree) {
     if !tree.is_null() {
         unsafe {
@@ -48,13 +48,13 @@ pub extern "C" fn taffy_free(tree: *mut TaffyTree) {
     }
 }
 
-#[unsafe(no_mangle)]
+#[no_mangle]
 pub extern "C" fn taffy_enable_rounding(tree: *mut TaffyTree) {
     let tree = unsafe { &mut *tree };
     tree.enable_rounding();
 }
 
-#[unsafe(no_mangle)]
+#[no_mangle]
 pub extern "C" fn taffy_disable_rounding(tree: *mut TaffyTree) {
     let tree = unsafe { &mut *tree };
     tree.disable_rounding();
@@ -575,7 +575,7 @@ impl From<c_Style> for Style {
 
 // NODES
 
-#[unsafe(no_mangle)]
+#[no_mangle]
 pub extern "C" fn taffy_node_create(tree: *mut TaffyTree, style: *const c_Style) -> u64 {
     let tree = unsafe { &mut *tree };
     let style = unsafe { Style::from(*style) };
@@ -585,7 +585,7 @@ pub extern "C" fn taffy_node_create(tree: *mut TaffyTree, style: *const c_Style)
     }
 }
 
-#[unsafe(no_mangle)]
+#[no_mangle]
 pub extern "C" fn taffy_node_add_child(tree: *mut TaffyTree, parent: u64, child: u64) -> i32 {
     let tree = unsafe { &mut *tree };
     let parent = NodeId::from(parent);
@@ -596,7 +596,7 @@ pub extern "C" fn taffy_node_add_child(tree: *mut TaffyTree, parent: u64, child:
     }
 }
 
-#[unsafe(no_mangle)]
+#[no_mangle]
 pub extern "C" fn taffy_node_drop(tree: *mut TaffyTree, node: u64) -> i32 {
     let tree = unsafe { &mut *tree };
     let node = NodeId::from(node);
@@ -606,13 +606,13 @@ pub extern "C" fn taffy_node_drop(tree: *mut TaffyTree, node: u64) -> i32 {
     }
 }
 
-#[unsafe(no_mangle)]
+#[no_mangle]
 pub extern "C" fn taffy_node_drop_all(tree: *mut TaffyTree) {
     let tree = unsafe { &mut *tree };
     tree.clear();
 }
 
-#[unsafe(no_mangle)]
+#[no_mangle]
 pub extern "C" fn taffy_node_replace_child_at_index(tree: *mut TaffyTree, parent: u64, index: usize, child: u64) -> i32 {
     let tree = unsafe { &mut *tree };
     let parent = NodeId::from(parent);
@@ -623,7 +623,7 @@ pub extern "C" fn taffy_node_replace_child_at_index(tree: *mut TaffyTree, parent
     }
 }
 
-#[unsafe(no_mangle)]
+#[no_mangle]
 pub extern "C" fn taffy_node_remove_child(tree: *mut TaffyTree, parent: u64, child: u64) -> i32 {
     let tree = unsafe { &mut *tree };
     let parent = NodeId::from(parent);
@@ -634,7 +634,7 @@ pub extern "C" fn taffy_node_remove_child(tree: *mut TaffyTree, parent: u64, chi
     }
 }
 
-#[unsafe(no_mangle)]
+#[no_mangle]
 pub extern "C" fn taffy_node_remove_child_at_index(tree: *mut TaffyTree, parent: u64, index: usize) -> i32 {
     let tree = unsafe { &mut *tree };
     let parent = NodeId::from(parent);
@@ -644,7 +644,7 @@ pub extern "C" fn taffy_node_remove_child_at_index(tree: *mut TaffyTree, parent:
     }
 }
 
-#[unsafe(no_mangle)]
+#[no_mangle]
 pub extern "C" fn taffy_node_dirty(tree: *mut TaffyTree, node: u64) -> i32 {
     let tree = unsafe { &mut *tree };
     let node = NodeId::from(node);
@@ -654,7 +654,7 @@ pub extern "C" fn taffy_node_dirty(tree: *mut TaffyTree, node: u64) -> i32 {
     }
 }
 
-#[unsafe(no_mangle)]
+#[no_mangle]
 pub extern "C" fn taffy_node_mark_dirty(tree: *mut TaffyTree, node: u64) -> i32 {
     let tree = unsafe { &mut *tree };
     let node = NodeId::from(node);
@@ -664,7 +664,7 @@ pub extern "C" fn taffy_node_mark_dirty(tree: *mut TaffyTree, node: u64) -> i32 
     }
 }
 
-#[unsafe(no_mangle)]
+#[no_mangle]
 pub extern "C" fn taffy_node_set_style(tree: *mut TaffyTree, node: u64, style: *const c_Style) -> i32 {
     let tree = unsafe { &mut *tree };
     let node = NodeId::from(node);
@@ -675,7 +675,7 @@ pub extern "C" fn taffy_node_set_style(tree: *mut TaffyTree, node: u64, style: *
     }
 }
 
-#[unsafe(no_mangle)]
+#[no_mangle]
 pub extern "C" fn taffy_node_set_measure(tree: *mut TaffyTree, node: u64, measure: i32) -> i32 {
     let tree = unsafe { &mut *tree };
     let node = NodeId::from(node);
@@ -721,7 +721,7 @@ impl From<Layout> for c_Layout {
     }
 }
 
-#[unsafe(no_mangle)]
+#[no_mangle]
 pub extern "C" fn taffy_compute_layout(tree: *mut TaffyTree, node: u64, available_space: c_Size) -> i32 {
     let tree = unsafe { &mut *tree };
     let node = NodeId::from(node);
@@ -731,7 +731,7 @@ pub extern "C" fn taffy_compute_layout(tree: *mut TaffyTree, node: u64, availabl
     }
 }
 
-#[unsafe(no_mangle)]
+#[no_mangle]
 pub extern "C" fn taffy_get_layout(tree: *mut TaffyTree, node: u64, layout: *mut c_Layout) -> i32 {
     let tree = unsafe { &mut *tree };
     let node = NodeId::from(node);
