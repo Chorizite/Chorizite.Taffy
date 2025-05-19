@@ -26,19 +26,16 @@ namespace TaffySharp.Tests
                 var containerStyle = new Style()
                     .SetSize(new()
                     {
-                        width = new() { dim = 1, value = 200 },
-                        height = new() { dim = 1, value = 200 }
-                    })
-                    .SetJustifyContent((int)AlignContent.Center)
-                    .SetAlignContent((int)AlignContent.Center)
-                    .SetAlignItems((int)AlignItems.Center);
+                        width = new() { dim = (int)Dimension.Length, value = 200 },
+                        height = new() { dim = (int)Dimension.Length, value = 200 }
+                    });
 
                 var container = tree.NewWithChildren(containerStyle, child);
 
                 var didComputeLayout = tree.ComputeLayout(container, new()
                 {
-                    width = new() { dim = 1, value = 200 },
-                    height = new() { dim = 1, value = 200 }
+                    width = new() { dim = (int)Dimension.Length, value = 200 },
+                    height = new() { dim = (int)Dimension.Length, value = 200 }
                 });
 
                 Assert.IsTrue(didComputeLayout);
