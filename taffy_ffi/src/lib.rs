@@ -1,7 +1,7 @@
 #![allow(non_camel_case_types)]
 #![allow(non_snake_case)]
 
-use taffy::prelude::*;
+use taffy::{prelude::*, TextAlign};
 use taffy::style::Style;
 use taffy::Overflow;
 
@@ -13,50 +13,58 @@ pub struct c_TaffyTree {
 }
 
 #[no_mangle]
-pub extern "C" fn taffy_new() -> *mut TaffyTree {
-    let tree = TaffyTree::new();
-    Box::into_raw(Box::new(tree))
+pub extern "C" fn taffytree_new() -> usize {
+    let tree: taffy::TaffyTree<()> = taffy::TaffyTree::new();
+    Box::into_raw(Box::new(tree)) as usize
 }
 
 #[no_mangle]
-pub extern "C" fn taffy_new_with_children(tree: *mut TaffyTree, style: *const c_Style, children: *const u64, children_len: usize) -> u64 {
-    if tree.is_null() || style.is_null() || children.is_null() {
+pub extern "C" fn taffytree_with_capacity(capacity: usize) -> usize {
+    let tree: taffy::TaffyTree<()> = taffy::TaffyTree::with_capacity(capacity);
+    Box::into_raw(Box::new(tree)) as usize
+}
+
+#[no_mangle]
+pub extern "C" fn taffytree_new_with_children(tree: usize, style: *const c_Style, children: *const u64, children_len: usize) -> u64 {
+    if tree == 0 || style.is_null() || children.is_null() {
         return 0;
     }
 
-    let tree = unsafe { &mut *tree };
+    let tree_ptr = tree as *mut TaffyTree<()>;
+    let tree = unsafe { &mut *tree_ptr };
     let style = unsafe { Style::from(*style) };
 
-    // Convert raw children pointer to a slice of NodeId
     let children_slice: &[taffy::NodeId] = unsafe {
         std::slice::from_raw_parts(children as *const taffy::NodeId, children_len)
     };
 
-    // Call new_with_children
     match tree.new_with_children(style, children_slice) {
-        Ok(node) => node.into(), // Convert NodeId to u64
+        Ok(node) => node.into(),
         Err(_) => 0,
     }
 }
 
 #[no_mangle]
-pub extern "C" fn taffy_free(tree: *mut TaffyTree) {
-    if !tree.is_null() {
+pub extern "C" fn taffytree_free(tree: usize) {
+    if tree != 0 {
+        let tree_ptr = tree as *mut TaffyTree;
         unsafe {
-            drop(Box::from_raw(tree));
+            drop(Box::from_raw(tree_ptr));
         }
     }
 }
 
 #[no_mangle]
-pub extern "C" fn taffy_enable_rounding(tree: *mut TaffyTree) {
-    let tree = unsafe { &mut *tree };
+pub extern "C" fn taffytree_enable_rounding(tree: usize) {
+    let tree_ptr = tree as *mut TaffyTree<()>;
+    let tree = unsafe { &mut *tree_ptr };
     tree.enable_rounding();
 }
 
 #[no_mangle]
-pub extern "C" fn taffy_disable_rounding(tree: *mut TaffyTree) {
-    let tree = unsafe { &mut *tree };
+pub extern "C" fn taffytree_disable_rounding(tree: usize) {
+    let tree_ptr = tree as *mut TaffyTree<()>;
+    let tree = unsafe { &mut *tree_ptr };
     tree.disable_rounding();
 }
 
@@ -120,6 +128,8 @@ pub struct c_GridTrackSizing {
 pub struct c_Style {
     // Layout mode/strategy
     display: i32,
+    item_is_table: i32,
+    item_is_replaced: i32,
     box_sizing: i32,
     // Overflow
     overflow_x: i32,
@@ -130,6 +140,7 @@ pub struct c_Style {
     inset: c_Rect,
     // Alignment
     gap: c_Size,
+    text_align: i32,
     // Spacing
     margin: c_Rect,
     border: c_Rect,
@@ -236,6 +247,18 @@ impl FromIndex<FlexWrap> for FlexWrap {
             1 => FlexWrap::Wrap,
             2 => FlexWrap::WrapReverse,
             _ => panic!("invalid flex_wrap index {}", index),
+        }
+    }
+}
+
+impl FromIndex<TextAlign> for TextAlign {
+    fn from_index(index: i32) -> TextAlign {
+        match index {
+            0 => TextAlign::Auto,
+            1 => TextAlign::LegacyLeft,
+            2 => TextAlign::LegacyRight,
+            3 => TextAlign::LegacyCenter,
+            _ => panic!("invalid text_align index {}", index),
         }
     }
 }
@@ -498,6 +521,8 @@ impl From<c_Style> for Style {
     fn from(raw: c_Style) -> Self {
         Style {
             display: Display::from_index(raw.display),
+            item_is_table: if raw.item_is_table == 0 { false } else { true },
+            item_is_replaced: if raw.item_is_replaced == 0 { false } else { true },
             box_sizing: BoxSizing::from_index(raw.box_sizing),
             overflow: taffy::geometry::Point {
                 x: Overflow::from_index(raw.overflow_x),
@@ -513,6 +538,7 @@ impl From<c_Style> for Style {
             align_content: AlignContent::from_index(raw.align_content, raw.has_align_content),
             justify_content: AlignContent::from_index(raw.justify_content, raw.has_justify_content),
             gap: Size::from(raw.gap),
+            text_align: TextAlign::from_index(raw.text_align),
             margin: Rect::from(raw.margin),
             border: Rect::from(raw.border),
             padding: Rect::from(raw.padding),
@@ -576,8 +602,9 @@ impl From<c_Style> for Style {
 // NODES
 
 #[no_mangle]
-pub extern "C" fn taffy_node_create(tree: *mut TaffyTree, style: *const c_Style) -> u64 {
-    let tree = unsafe { &mut *tree };
+pub extern "C" fn taffytree_new_leaf(tree: usize, style: *const c_Style) -> u64 {
+    let tree_ptr = tree as *mut TaffyTree<()>;
+    let tree = unsafe { &mut *tree_ptr };
     let style = unsafe { Style::from(*style) };
     match tree.new_leaf(style) {
         Ok(node) => node.into(),
@@ -586,8 +613,9 @@ pub extern "C" fn taffy_node_create(tree: *mut TaffyTree, style: *const c_Style)
 }
 
 #[no_mangle]
-pub extern "C" fn taffy_node_add_child(tree: *mut TaffyTree, parent: u64, child: u64) -> i32 {
-    let tree = unsafe { &mut *tree };
+pub extern "C" fn taffytree_add_child(tree: usize, parent: u64, child: u64) -> i32 {
+    let tree_ptr = tree as *mut TaffyTree<()>;
+    let tree = unsafe { &mut *tree_ptr };
     let parent = NodeId::from(parent);
     let child = NodeId::from(child);
     match tree.add_child(parent, child) {
@@ -597,8 +625,9 @@ pub extern "C" fn taffy_node_add_child(tree: *mut TaffyTree, parent: u64, child:
 }
 
 #[no_mangle]
-pub extern "C" fn taffy_node_drop(tree: *mut TaffyTree, node: u64) -> i32 {
-    let tree = unsafe { &mut *tree };
+pub extern "C" fn taffytree_remove(tree: usize, node: u64) -> i32 {
+    let tree_ptr = tree as *mut TaffyTree<()>;
+    let tree = unsafe { &mut *tree_ptr };
     let node = NodeId::from(node);
     match tree.remove(node) {
         Ok(_) => 0,
@@ -607,14 +636,16 @@ pub extern "C" fn taffy_node_drop(tree: *mut TaffyTree, node: u64) -> i32 {
 }
 
 #[no_mangle]
-pub extern "C" fn taffy_node_drop_all(tree: *mut TaffyTree) {
-    let tree = unsafe { &mut *tree };
+pub extern "C" fn taffytree_clear(tree: usize) {
+    let tree_ptr = tree as *mut TaffyTree<()>;
+    let tree = unsafe { &mut *tree_ptr };
     tree.clear();
 }
 
 #[no_mangle]
-pub extern "C" fn taffy_node_replace_child_at_index(tree: *mut TaffyTree, parent: u64, index: usize, child: u64) -> i32 {
-    let tree = unsafe { &mut *tree };
+pub extern "C" fn taffytree_replace_child_at_index(tree: usize, parent: u64, index: usize, child: u64) -> i32 {
+    let tree_ptr = tree as *mut TaffyTree<()>;
+    let tree = unsafe { &mut *tree_ptr };
     let parent = NodeId::from(parent);
     let child = NodeId::from(child);
     match tree.replace_child_at_index(parent, index, child) {
@@ -624,8 +655,9 @@ pub extern "C" fn taffy_node_replace_child_at_index(tree: *mut TaffyTree, parent
 }
 
 #[no_mangle]
-pub extern "C" fn taffy_node_remove_child(tree: *mut TaffyTree, parent: u64, child: u64) -> i32 {
-    let tree = unsafe { &mut *tree };
+pub extern "C" fn taffytree_remove_child(tree: usize, parent: u64, child: u64) -> i32 {
+    let tree_ptr = tree as *mut TaffyTree<()>;
+    let tree = unsafe { &mut *tree_ptr };
     let parent = NodeId::from(parent);
     let child = NodeId::from(child);
     match tree.remove_child(parent, child) {
@@ -635,8 +667,9 @@ pub extern "C" fn taffy_node_remove_child(tree: *mut TaffyTree, parent: u64, chi
 }
 
 #[no_mangle]
-pub extern "C" fn taffy_node_remove_child_at_index(tree: *mut TaffyTree, parent: u64, index: usize) -> i32 {
-    let tree = unsafe { &mut *tree };
+pub extern "C" fn taffytree_remove_child_at_index(tree: usize, parent: u64, index: usize) -> i32 {
+    let tree_ptr = tree as *mut TaffyTree<()>;
+    let tree = unsafe { &mut *tree_ptr };
     let parent = NodeId::from(parent);
     match tree.remove_child_at_index(parent, index) {
         Ok(_) => 0,
@@ -645,8 +678,9 @@ pub extern "C" fn taffy_node_remove_child_at_index(tree: *mut TaffyTree, parent:
 }
 
 #[no_mangle]
-pub extern "C" fn taffy_node_dirty(tree: *mut TaffyTree, node: u64) -> i32 {
-    let tree = unsafe { &mut *tree };
+pub extern "C" fn taffytree_dirty(tree: usize, node: u64) -> i32 {
+    let tree_ptr = tree as *mut TaffyTree<()>;
+    let tree = unsafe { &mut *tree_ptr };
     let node = NodeId::from(node);
     match tree.dirty(node) {
         Ok(dirty) => if dirty { 1 } else { 0 },
@@ -655,8 +689,9 @@ pub extern "C" fn taffy_node_dirty(tree: *mut TaffyTree, node: u64) -> i32 {
 }
 
 #[no_mangle]
-pub extern "C" fn taffy_node_mark_dirty(tree: *mut TaffyTree, node: u64) -> i32 {
-    let tree = unsafe { &mut *tree };
+pub extern "C" fn taffytree_mark_dirty(tree: usize, node: u64) -> i32 {
+    let tree_ptr = tree as *mut TaffyTree<()>;
+    let tree = unsafe { &mut *tree_ptr };
     let node = NodeId::from(node);
     match tree.mark_dirty(node) {
         Ok(_) => 0,
@@ -665,8 +700,9 @@ pub extern "C" fn taffy_node_mark_dirty(tree: *mut TaffyTree, node: u64) -> i32 
 }
 
 #[no_mangle]
-pub extern "C" fn taffy_node_set_style(tree: *mut TaffyTree, node: u64, style: *const c_Style) -> i32 {
-    let tree = unsafe { &mut *tree };
+pub extern "C" fn taffytree_set_style(tree: usize, node: u64, style: *const c_Style) -> i32 {
+    let tree_ptr = tree as *mut TaffyTree<()>;
+    let tree = unsafe { &mut *tree_ptr };
     let node = NodeId::from(node);
     let style = unsafe { Style::from(*style) };
     match tree.set_style(node, style) {
@@ -675,24 +711,14 @@ pub extern "C" fn taffy_node_set_style(tree: *mut TaffyTree, node: u64, style: *
     }
 }
 
-#[no_mangle]
-pub extern "C" fn taffy_node_set_measure(tree: *mut TaffyTree, node: u64, measure: i32) -> i32 {
-    let tree = unsafe { &mut *tree };
-    let node = NodeId::from(node);
-    match tree.set_node_context(
-        node,
-        if measure == 0 {
-            None
-        } else {
-            Some(())
-        },
-    ) {
-        Ok(_) => 0,
-        Err(_) => 1,
-    }
-}
-
 // LAYOUT
+
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct c_AvailableSpace {
+    width: c_Length,
+    height: c_Length,
+}
 
 #[repr(C)]
 pub struct c_Layout {
@@ -722,18 +748,39 @@ impl From<Layout> for c_Layout {
 }
 
 #[no_mangle]
-pub extern "C" fn taffy_compute_layout(tree: *mut TaffyTree, node: u64, available_space: c_Size) -> i32 {
-    let tree = unsafe { &mut *tree };
+pub extern "C" fn taffytree_compute_layout(
+    tree: usize,
+    node: u64,
+    available_space: c_AvailableSpace,
+) -> i32 {
+    let tree_ptr = tree as *mut TaffyTree<()>;
+    let tree = unsafe { &mut *tree_ptr };
     let node = NodeId::from(node);
-    match tree.compute_layout(node, Size::from(available_space)) {
+
+    let width = match available_space.width.dim {
+        0 => taffy::style::AvailableSpace::Definite(available_space.width.value),
+        1 => taffy::style::AvailableSpace::MinContent,
+        2 => taffy::style::AvailableSpace::MaxContent,
+        _ => taffy::style::AvailableSpace::Definite(available_space.width.value),
+    };
+
+    let height = match available_space.height.dim {
+        0 => taffy::style::AvailableSpace::Definite(available_space.height.value),
+        1 => taffy::style::AvailableSpace::MinContent,
+        2 => taffy::style::AvailableSpace::MaxContent,
+        _ => taffy::style::AvailableSpace::Definite(available_space.height.value),
+    };
+
+    match tree.compute_layout(node, Size { width: width, height: height }) {
         Ok(_) => 0,
         Err(_) => 1,
     }
 }
 
 #[no_mangle]
-pub extern "C" fn taffy_get_layout(tree: *mut TaffyTree, node: u64, layout: *mut c_Layout) -> i32 {
-    let tree = unsafe { &mut *tree };
+pub extern "C" fn taffytree_layout(tree: usize, node: u64, layout: *mut c_Layout) -> i32 {
+    let tree_ptr = tree as *mut TaffyTree<()>;
+    let tree = unsafe { &mut *tree_ptr };
     let node = NodeId::from(node);
     match tree.layout(node) {
         Ok(l) => {

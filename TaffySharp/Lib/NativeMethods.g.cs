@@ -10,85 +10,85 @@ using System.Runtime.InteropServices;
 
 namespace TaffySharp.Lib
 {
-    public static unsafe partial class NativeMethods
+    internal static unsafe partial class NativeMethods
     {
         const string __DllName = "taffy_ffi";
 
 
 
-        [DllImport(__DllName, EntryPoint = "taffy_new", CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-        public static extern TaffyTree* taffy_new();
+        [DllImport(__DllName, EntryPoint = "taffytree_new", CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
+        internal static extern nuint taffytree_new();
 
-        [DllImport(__DllName, EntryPoint = "taffy_new_with_children", CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-        public static extern ulong taffy_new_with_children(TaffyTree* tree, c_Style* style, ulong* children, nuint children_len);
+        [DllImport(__DllName, EntryPoint = "taffytree_with_capacity", CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
+        internal static extern nuint taffytree_with_capacity(nuint capacity);
 
-        [DllImport(__DllName, EntryPoint = "taffy_free", CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-        public static extern void taffy_free(TaffyTree* tree);
+        [DllImport(__DllName, EntryPoint = "taffytree_new_with_children", CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
+        internal static extern ulong taffytree_new_with_children(nuint tree, c_Style* style, ulong* children, nuint children_len);
 
-        [DllImport(__DllName, EntryPoint = "taffy_enable_rounding", CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-        public static extern void taffy_enable_rounding(TaffyTree* tree);
+        [DllImport(__DllName, EntryPoint = "taffytree_free", CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
+        internal static extern void taffytree_free(nuint tree);
 
-        [DllImport(__DllName, EntryPoint = "taffy_disable_rounding", CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-        public static extern void taffy_disable_rounding(TaffyTree* tree);
+        [DllImport(__DllName, EntryPoint = "taffytree_enable_rounding", CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
+        internal static extern void taffytree_enable_rounding(nuint tree);
 
-        [DllImport(__DllName, EntryPoint = "taffy_node_create", CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-        public static extern ulong taffy_node_create(TaffyTree* tree, c_Style* style);
+        [DllImport(__DllName, EntryPoint = "taffytree_disable_rounding", CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
+        internal static extern void taffytree_disable_rounding(nuint tree);
 
-        [DllImport(__DllName, EntryPoint = "taffy_node_add_child", CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-        public static extern int taffy_node_add_child(TaffyTree* tree, ulong parent, ulong child);
+        [DllImport(__DllName, EntryPoint = "taffytree_new_leaf", CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
+        internal static extern ulong taffytree_new_leaf(nuint tree, c_Style* style);
 
-        [DllImport(__DllName, EntryPoint = "taffy_node_drop", CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-        public static extern int taffy_node_drop(TaffyTree* tree, ulong node);
+        [DllImport(__DllName, EntryPoint = "taffytree_add_child", CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
+        internal static extern int taffytree_add_child(nuint tree, ulong parent, ulong child);
 
-        [DllImport(__DllName, EntryPoint = "taffy_node_drop_all", CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-        public static extern void taffy_node_drop_all(TaffyTree* tree);
+        [DllImport(__DllName, EntryPoint = "taffytree_remove", CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
+        internal static extern int taffytree_remove(nuint tree, ulong node);
 
-        [DllImport(__DllName, EntryPoint = "taffy_node_replace_child_at_index", CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-        public static extern int taffy_node_replace_child_at_index(TaffyTree* tree, ulong parent, nuint index, ulong child);
+        [DllImport(__DllName, EntryPoint = "taffytree_clear", CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
+        internal static extern void taffytree_clear(nuint tree);
 
-        [DllImport(__DllName, EntryPoint = "taffy_node_remove_child", CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-        public static extern int taffy_node_remove_child(TaffyTree* tree, ulong parent, ulong child);
+        [DllImport(__DllName, EntryPoint = "taffytree_replace_child_at_index", CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
+        internal static extern int taffytree_replace_child_at_index(nuint tree, ulong parent, nuint index, ulong child);
 
-        [DllImport(__DllName, EntryPoint = "taffy_node_remove_child_at_index", CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-        public static extern int taffy_node_remove_child_at_index(TaffyTree* tree, ulong parent, nuint index);
+        [DllImport(__DllName, EntryPoint = "taffytree_remove_child", CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
+        internal static extern int taffytree_remove_child(nuint tree, ulong parent, ulong child);
 
-        [DllImport(__DllName, EntryPoint = "taffy_node_dirty", CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-        public static extern int taffy_node_dirty(TaffyTree* tree, ulong node);
+        [DllImport(__DllName, EntryPoint = "taffytree_remove_child_at_index", CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
+        internal static extern int taffytree_remove_child_at_index(nuint tree, ulong parent, nuint index);
 
-        [DllImport(__DllName, EntryPoint = "taffy_node_mark_dirty", CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-        public static extern int taffy_node_mark_dirty(TaffyTree* tree, ulong node);
+        [DllImport(__DllName, EntryPoint = "taffytree_dirty", CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
+        internal static extern int taffytree_dirty(nuint tree, ulong node);
 
-        [DllImport(__DllName, EntryPoint = "taffy_node_set_style", CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-        public static extern int taffy_node_set_style(TaffyTree* tree, ulong node, c_Style* style);
+        [DllImport(__DllName, EntryPoint = "taffytree_mark_dirty", CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
+        internal static extern int taffytree_mark_dirty(nuint tree, ulong node);
 
-        [DllImport(__DllName, EntryPoint = "taffy_node_set_measure", CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-        public static extern int taffy_node_set_measure(TaffyTree* tree, ulong node, int measure);
+        [DllImport(__DllName, EntryPoint = "taffytree_set_style", CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
+        internal static extern int taffytree_set_style(nuint tree, ulong node, c_Style* style);
 
-        [DllImport(__DllName, EntryPoint = "taffy_compute_layout", CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-        public static extern int taffy_compute_layout(TaffyTree* tree, ulong node, c_Size available_space);
+        [DllImport(__DllName, EntryPoint = "taffytree_compute_layout", CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
+        internal static extern int taffytree_compute_layout(nuint tree, ulong node, c_AvailableSpace available_space);
 
-        [DllImport(__DllName, EntryPoint = "taffy_get_layout", CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-        public static extern int taffy_get_layout(TaffyTree* tree, ulong node, c_Layout* layout);
+        [DllImport(__DllName, EntryPoint = "taffytree_layout", CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
+        internal static extern int taffytree_layout(nuint tree, ulong node, c_Layout* layout);
 
 
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public unsafe partial struct c_Length
+    internal unsafe partial struct c_Length
     {
         public int dim;
         public float value;
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public unsafe partial struct c_Size
+    internal unsafe partial struct c_Size
     {
         public c_Length width;
         public c_Length height;
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public unsafe partial struct c_Rect
+    internal unsafe partial struct c_Rect
     {
         public c_Length left;
         public c_Length right;
@@ -97,28 +97,28 @@ namespace TaffySharp.Lib
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public unsafe partial struct c_GridIndex
+    internal unsafe partial struct c_GridIndex
     {
         public sbyte kind;
         public short value;
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public unsafe partial struct c_GridPlacement
+    internal unsafe partial struct c_GridPlacement
     {
         public c_GridIndex start;
         public c_GridIndex end;
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public unsafe partial struct c_GridTrackSize
+    internal unsafe partial struct c_GridTrackSize
     {
         public c_Length min_size;
         public c_Length max_size;
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public unsafe partial struct c_GridTrackSizing
+    internal unsafe partial struct c_GridTrackSizing
     {
         public int repetition;
         public c_GridTrackSize* single;
@@ -127,9 +127,11 @@ namespace TaffySharp.Lib
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public unsafe partial struct c_Style
+    internal unsafe partial struct c_Style
     {
         public int display;
+        public int item_is_table;
+        public int item_is_replaced;
         public int box_sizing;
         public int overflow_x;
         public int overflow_y;
@@ -137,6 +139,7 @@ namespace TaffySharp.Lib
         public int position;
         public c_Rect inset;
         public c_Size gap;
+        public int text_align;
         public c_Rect margin;
         public c_Rect border;
         public c_Rect padding;
@@ -176,7 +179,14 @@ namespace TaffySharp.Lib
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public unsafe partial struct c_Layout
+    internal unsafe partial struct c_AvailableSpace
+    {
+        public c_Length width;
+        public c_Length height;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    internal unsafe partial struct c_Layout
     {
         public long order;
         public fixed float location[2];
