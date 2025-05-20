@@ -41,7 +41,7 @@ rustup target add i686-pc-windows-msvc
 rustup target add x86_64-pc-windows-msvc
 
 # build
-./build_taffy_ffi.sh
+./build_native.sh
 
 # The dlls should have been built and copied to TaffySharp/runtimes/
 # The pinvoke bindings should be generated in TaffySharp/Lib/NativeMethods.g.cs
