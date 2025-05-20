@@ -52,6 +52,7 @@ rustup target add x86_64-pc-windows-msvc
 ## TODO
 - Grid support
 - Calc support
+- Better managed nodes
 - Context support for nodes
 - Add targets for linux / osx
 - Generate tests?

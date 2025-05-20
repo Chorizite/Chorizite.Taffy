@@ -3,13 +3,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Linq;
+using TaffySharp.Lib;
 
 namespace TaffySharp
 {
     /// <summary>
     /// A node
     /// </summary>
-    public class Node
+    public struct Node
     {
         /// <summary>
         /// The tree this node belongs to
@@ -20,7 +22,15 @@ namespace TaffySharp
         /// <summary>
         /// The id of this node
         /// </summary>
-        public ulong Id { get; }
+        public readonly ulong Id;
+
+        /// <summary>
+        /// Whether the layout of this node is dirty (outdated)
+        /// </summary>
+        public bool IsDirty {
+            get => Tree.Dirty(this);
+            set => Tree.MarkDirty(this);
+        }
 
         internal Node(TaffyTree tree, ulong id)
         {

@@ -71,16 +71,30 @@ public unsafe class TaffyTree : IDisposable
         }
     }
 
+    /// <summary>
+    /// Adds a `child` node under the supplied `parent`
+    /// </summary>
+    /// <param name="parent"></param>
+    /// <param name="child"></param>
+    /// <returns></returns>
     public bool AddChild(Node parent, Node child)
     {
         return NativeMethods.taffytree_add_child(_tree, parent.Id, child.Id) == 0;
     }
 
+    /// <summary>
+    /// Remove a specific node from the tree and drop it
+    /// </summary>
+    /// <param name="node"></param>
+    /// <returns></returns>
     public bool Remove(Node node)
     {
         return NativeMethods.taffytree_remove(_tree, node.Id) == 0;
     }
 
+    /// <summary>
+    /// Drops all nodes in the tree
+    /// </summary>
     public void Clear()
     {
         NativeMethods.taffytree_clear(_tree);
@@ -101,11 +115,21 @@ public unsafe class TaffyTree : IDisposable
         return NativeMethods.taffytree_remove_child_at_index(_tree, parent.Id, index) == 0;
     }
 
-    public int Dirty(Node node)
+    /// <summary>
+    /// Indicates whether the layout of this node needs to be recomputed
+    /// </summary>
+    /// <param name="node"></param>
+    /// <returns></returns>
+    public bool Dirty(Node node)
     {
-        return NativeMethods.taffytree_dirty(_tree, node.Id);
+        return NativeMethods.taffytree_dirty(_tree, node.Id) == 0 ? false : true;
     }
 
+    /// <summary>
+    /// Marks the layout of this node and its ancestors as outdated
+    /// </summary>
+    /// <param name="node"></param>
+    /// <returns></returns>
     public bool MarkDirty(Node node)
     {
         return NativeMethods.taffytree_mark_dirty(_tree, node.Id) == 0;
@@ -143,6 +167,9 @@ public unsafe class TaffyTree : IDisposable
         }
     }
 
+    /// <summary>
+    /// Disposes the <see cref="TaffyTree"/>, freeing its memory
+    /// </summary>
     public void Dispose()
     {
         if (!_disposed)
