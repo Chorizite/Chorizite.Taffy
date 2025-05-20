@@ -4,7 +4,7 @@ Provides a managed csharp wrapper around [Taffy](https://github.com/DioxusLabs/t
 ## Usage:
 Install nuget package `Chorizite.TaffySharp`
 
-```
+```cs
 // build a new tree:
 using var tree = new TaffyTree();
 
@@ -35,7 +35,7 @@ if (container.ComputeLayout(new(100f, 100f))) {
 - Update taffy_ffi/src/lib.rs with any api changes
 - Build native dlls:
 
-```
+```sh
 # add targets if you don't already have them
 rustup target add i686-pc-windows-msvc
 rustup target add x86_64-pc-windows-msvc
