@@ -48,10 +48,12 @@ public unsafe class TaffyTree : IDisposable
     /// <returns></returns>
     public Node NewLeaf(Style style)
     {
-        var c_Style = style.ToCStruct();
-        var nodeId = NativeMethods.taffytree_new_leaf(_tree, &c_Style);
+        using (var c_Style = style.ToCStruct())
+        {
+            var nodeId = NativeMethods.taffytree_new_leaf(_tree, (c_Style*)c_Style.NativePtr);
 
-        return new Node(this, nodeId);
+            return new Node(this, nodeId);
+        }
     }
 
     /// <summary>
@@ -65,9 +67,11 @@ public unsafe class TaffyTree : IDisposable
         var childrenIds = children.Select(x => x.Id).ToArray();
         fixed (ulong* childrenPtr = childrenIds)
         {
-            var c_Style = style.ToCStruct();
-            var nodeId = NativeMethods.taffytree_new_with_children(_tree, &c_Style, childrenPtr, (nuint)children.Length);
-            return new Node(this, nodeId);
+            using (var c_Style = style.ToCStruct())
+            {
+                var nodeId = NativeMethods.taffytree_new_with_children(_tree, (c_Style*)c_Style.NativePtr, childrenPtr, (nuint)children.Length);
+                return new Node(this, nodeId);
+            }
         }
     }
 
@@ -137,8 +141,10 @@ public unsafe class TaffyTree : IDisposable
 
     public bool SetStyle(Node node, Style style)
     {
-        var c_Style = style.ToCStruct();
-        return NativeMethods.taffytree_set_style(_tree, node.Id, &c_Style) == 0;
+        using (var c_Style = style.ToCStruct())
+        {
+            return NativeMethods.taffytree_set_style(_tree, node.Id, (c_Style*)c_Style.NativePtr) == 0;
+        }
     }
 
     public bool ComputeLayout(Node node, AvailableSpace availableSpace)

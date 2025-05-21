@@ -378,4 +378,83 @@ namespace TaffySharp
         /// </summary>
         WrapReverse,
     }
+
+    /// <summary>
+    /// The size of a grid track
+    /// </summary>
+    public enum TrackSize
+    {
+        /// <summary>
+        /// A fixed size
+        /// </summary>
+        Length,
+
+        /// <summary>
+        /// A percentage of the available space
+        /// </summary>
+        Fr,
+
+        /// <summary>
+        /// Auto size
+        /// </summary>
+        Auto,
+
+        /// <summary>
+        /// Repeat the size of the track
+        /// </summary>
+        Repeat
+    }
+
+    /// <summary>
+    /// The type of grid placement
+    /// </summary>
+    public enum GridPlacementType
+    {
+        /// <summary>
+        /// Auto
+        /// </summary>
+        Auto = 0,
+
+        /// <summary>
+        /// Line
+        /// </summary>
+        Line = 1,
+
+        /// <summary>
+        /// Span
+        /// </summary>
+        Span = 2,
+    }
+
+    /// <summary>
+    /// Controls whether grid items are placed row-wise or column-wise. And whether the sparse or dense packing algorithm is used.
+    ///
+    /// <para>The "dense" packing algorithm attempts to fill in holes earlier in the grid, if smaller items come up later. This may cause items to appear out-of-order, when doing so would fill in holes left by larger items.</para>
+    ///
+    /// <para>Defaults to <see cref="GridAutoFlow.Row"/></para>
+    ///
+    /// <para>[MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/grid-auto-flow)</para>
+    /// </summary>
+    public enum GridAutoFlow
+    {
+        /// <summary>
+        /// Items are placed by filling each row in turn, adding new rows as necessary
+        /// </summary>
+        Row,
+
+        /// <summary>
+        /// Items are placed by filling each column in turn, adding new columns as necessary.
+        /// </summary>
+        Column,
+
+        /// <summary>
+        /// Combines `Row` with the dense packing algorithm.
+        /// </summary>
+        RowDense,
+
+        /// <summary>
+        /// Combines `Column` with the dense packing algorithm.
+        /// </summary>
+        ColumnDense,
+    }
 }

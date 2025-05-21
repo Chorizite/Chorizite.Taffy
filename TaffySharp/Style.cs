@@ -1,13 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System;
 using System.Runtime.InteropServices;
-using System.Collections.Generic;
-using global::TaffySharp.Lib;
-using System.Drawing;
+using TaffySharp.Lib;
 
 namespace TaffySharp
 {
@@ -35,15 +30,17 @@ namespace TaffySharp
     public class Style : IDisposable
     {
         private bool _disposed;
+        // Store pointers to free in Dispose
+        private readonly List<IntPtr> _allocatedPointers = new List<IntPtr>();
 
         /// <summary>
         /// What layout strategy should be used
         /// </summary>
-        // Managed state
         public Display Display { get; set; } = Display.Default;
+
         /// <summary>
         /// Whether a child is display:table or not. This affects children of block layouts.
-        /// This should really be part of `Display`, but it is currently seperate because table layout isn't implemented
+        /// This should really be part of `Display`, but it is currently separate because table layout isn't implemented
         /// </summary>
         public bool ItemIsTable { get; set; } = false;
 
@@ -187,63 +184,193 @@ namespace TaffySharp
         public float FlexShrink { get; set; } = 1.0f;
 
         /// <summary>
+        /// Defines the track sizing functions (heights) of the grid rows
+        /// </summary>
+        public List<GridTrack> GridTemplateRows { get; set; } = new List<GridTrack>();
+
+        /// <summary>
+        /// Defines the track sizing functions (widths) of the grid columns
+        /// </summary>
+        public List<GridTrack> GridTemplateColumns { get; set; } = new List<GridTrack>();
+
+        /// <summary>
+        /// Defines the size of implicitly created rows
+        /// </summary>
+        public List<GridTrack> GridAutoRows { get; set; } = new List<GridTrack>();
+
+        /// <summary>
+        /// Defines the size of implicitly created columns
+        /// </summary>
+        public List<GridTrack> GridAutoColumns { get; set; } = new List<GridTrack>();
+
+        /// <summary>
+        /// Controls how items get placed into the grid for auto-placed items
+        /// </summary>
+        public GridAutoFlow GridAutoFlow { get; set; } = GridAutoFlow.Row;
+
+        /// <summary>
+        /// Defines which row in the grid the item should start and end at
+        /// </summary>
+        public GridPlacement? GridRow { get; set; }
+
+        /// <summary>
+        /// Defines which column in the grid the item should start and end at
+        /// </summary>
+        public GridPlacement? GridColumn { get; set; }
+
+        /// <summary>
         /// Creates a new style
         /// </summary>
         public Style()
         {
-            
         }
 
         /// <summary>
         /// Converts this style to a C struct
+        /// Stores allocated pointers in _allocatedPointers for cleanup in Dispose
         /// </summary>
-        /// <returns></returns>
-        internal c_Style ToCStruct()
+        internal unsafe CStyleDisposable ToCStruct()
         {
-            return new c_Style
+            List<IntPtr> allocatedPointers = new List<IntPtr>();
+
+            // Allocate memory for c_Style
+            IntPtr cStylePtr = Marshal.AllocHGlobal(Marshal.SizeOf<c_Style>());
+            allocatedPointers.Add(cStylePtr);
+            c_Style* cStyle = (c_Style*)cStylePtr;
+
+            // Convert GridTemplateRows
+            if (GridTemplateRows.Any())
             {
-                display = (int)Display,
-                item_is_table = ItemIsTable ? 1 : 0,
-                item_is_replaced = ItemIsReplaced ? 1 : 0,
-                box_sizing = (int)BoxSizing,
-                overflow_x = (int)Overflow.X,
-                overflow_y = (int)Overflow.Y,
-                scrollbar_width = ScrollbarWidth,
-                position = (int)Position,
-                inset = Inset.ToCStruct(),
-                size = Size.ToCStruct(),
-                min_size = MinSize.ToCStruct(),
-                max_size = MaxSize.ToCStruct(),
-                aspect_ratio = AspectRatio.HasValue ? AspectRatio.Value : 0,
-                has_aspect_ratio = AspectRatio.HasValue ? 1 : 0,
-                margin = Margin.ToCStruct(),
-                padding = Padding.ToCStruct(),
-                border = Border.ToCStruct(),
-                align_items = AlignItems.HasValue ? (int)AlignItems.Value : 0,
-                has_align_items = AlignItems.HasValue ? 1 : 0,
-                align_self = AlignSelf.HasValue ? (int)AlignSelf.Value : 0,
-                has_align_self = AlignSelf.HasValue ? 1 : 0,
-                justify_items = JustifyItems.HasValue ? (int)JustifyItems.Value : 0,
-                has_justify_items = JustifyItems.HasValue ? 1 : 0,
-                justify_self = JustifySelf.HasValue ? (int)JustifySelf.Value : 0,
-                has_justify_self = JustifySelf.HasValue ? 1 : 0,
-                align_content = AlignContent.HasValue ? (int)AlignContent.Value : 0,
-                has_align_content = AlignContent.HasValue ? 1 : 0,
-                justify_content = JustifyContent.HasValue ? (int)JustifyContent.Value : 0,
-                has_justify_content = JustifyContent.HasValue ? 1 : 0,
-                gap = Gap.ToCStruct(),
-                text_align = (int)TextAlign,
-                flex_direction = (int)FlexDirection,
-                flex_wrap = (int)FlexWrap,
-                flex_basis = FlexBasis.ToCStruct(),
-                flex_grow = FlexGrow,
-                flex_shrink = FlexShrink
-            };
+                var trackSizings = GridTemplateRows.Select(t => t.ToCStruct(allocatedPointers)).ToArray();
+                IntPtr gridTemplateRowsPtr = Marshal.AllocHGlobal(trackSizings.Length * Marshal.SizeOf<c_GridTrackSizing>());
+                allocatedPointers.Add(gridTemplateRowsPtr);
+                for (int i = 0; i < trackSizings.Length; i++)
+                {
+                    Marshal.StructureToPtr(trackSizings[i], gridTemplateRowsPtr + (i * Marshal.SizeOf<c_GridTrackSizing>()), false);
+                }
+                cStyle->grid_template_rows = (c_GridTrackSizing*)gridTemplateRowsPtr;
+                cStyle->grid_template_rows_count = (nuint)trackSizings.Length;
+            }
+            else
+            {
+                cStyle->grid_template_rows = null;
+                cStyle->grid_template_rows_count = 0;
+            }
+
+            // Convert GridTemplateColumns
+            if (GridTemplateColumns.Any())
+            {
+                var trackSizings = GridTemplateColumns.Select(t => t.ToCStruct(allocatedPointers)).ToArray();
+                IntPtr gridTemplateColumnsPtr = Marshal.AllocHGlobal(trackSizings.Length * Marshal.SizeOf<c_GridTrackSizing>());
+                allocatedPointers.Add(gridTemplateColumnsPtr);
+                for (int i = 0; i < trackSizings.Length; i++)
+                {
+                    Marshal.StructureToPtr(trackSizings[i], gridTemplateColumnsPtr + (i * Marshal.SizeOf<c_GridTrackSizing>()), false);
+                }
+                cStyle->grid_template_columns = (c_GridTrackSizing*)gridTemplateColumnsPtr;
+                cStyle->grid_template_columns_count = (nuint)trackSizings.Length;
+            }
+            else
+            {
+                cStyle->grid_template_columns = null;
+                cStyle->grid_template_columns_count = 0;
+            }
+
+            // Convert GridAutoRows (non-repeated tracks)
+            if (GridAutoRows.Any())
+            {
+                if (GridAutoRows.Any(t => t.Type == TrackSize.Repeat))
+                    throw new InvalidOperationException("GridAutoRows cannot contain Repeat tracks");
+                var trackSizes = GridAutoRows.Select(t => t.ToCGridTrackSize()).ToArray();
+                IntPtr gridAutoRowsPtr = Marshal.AllocHGlobal(trackSizes.Length * Marshal.SizeOf<c_GridTrackSize>());
+                allocatedPointers.Add(gridAutoRowsPtr);
+                for (int i = 0; i < trackSizes.Length; i++)
+                {
+                    Marshal.StructureToPtr(trackSizes[i], gridAutoRowsPtr + (i * Marshal.SizeOf<c_GridTrackSize>()), false);
+                }
+                cStyle->grid_auto_rows = (c_GridTrackSize*)gridAutoRowsPtr;
+                cStyle->grid_auto_rows_count = (nuint)trackSizes.Length;
+            }
+            else
+            {
+                cStyle->grid_auto_rows = null;
+                cStyle->grid_auto_rows_count = 0;
+            }
+
+            // Convert GridAutoColumns (non-repeated tracks)
+            if (GridAutoColumns.Any())
+            {
+                if (GridAutoColumns.Any(t => t.Type == TrackSize.Repeat))
+                    throw new InvalidOperationException("GridAutoColumns cannot contain Repeat tracks");
+                var trackSizes = GridAutoColumns.Select(t => t.ToCGridTrackSize()).ToArray();
+                IntPtr gridAutoColumnsPtr = Marshal.AllocHGlobal(trackSizes.Length * Marshal.SizeOf<c_GridTrackSize>());
+                allocatedPointers.Add(gridAutoColumnsPtr);
+                for (int i = 0; i < trackSizes.Length; i++)
+                {
+                    Marshal.StructureToPtr(trackSizes[i], gridAutoColumnsPtr + (i * Marshal.SizeOf<c_GridTrackSize>()), false);
+                }
+                cStyle->grid_auto_columns = (c_GridTrackSize*)gridAutoColumnsPtr;
+                cStyle->grid_auto_columns_count = (nuint)trackSizes.Length;
+            }
+            else
+            {
+                cStyle->grid_auto_columns = null;
+                cStyle->grid_auto_columns_count = 0;
+            }
+
+            // Set other fields
+            cStyle->display = (int)Display;
+            cStyle->item_is_table = ItemIsTable ? 1 : 0;
+            cStyle->item_is_replaced = ItemIsReplaced ? 1 : 0;
+            cStyle->box_sizing = (int)BoxSizing;
+            cStyle->overflow_x = (int)Overflow.X;
+            cStyle->overflow_y = (int)Overflow.Y;
+            cStyle->scrollbar_width = ScrollbarWidth;
+            cStyle->position = (int)Position;
+            cStyle->inset = Inset.ToCStruct();
+            cStyle->size = Size.ToCStruct();
+            cStyle->min_size = MinSize.ToCStruct();
+            cStyle->max_size = MaxSize.ToCStruct();
+            cStyle->aspect_ratio = AspectRatio.HasValue ? AspectRatio.Value : 0;
+            cStyle->has_aspect_ratio = AspectRatio.HasValue ? 1 : 0;
+            cStyle->margin = Margin.ToCStruct();
+            cStyle->padding = Padding.ToCStruct();
+            cStyle->border = Border.ToCStruct();
+            cStyle->align_items = AlignItems.HasValue ? (int)AlignItems.Value : 0;
+            cStyle->has_align_items = AlignItems.HasValue ? 1 : 0;
+            cStyle->align_self = AlignSelf.HasValue ? (int)AlignSelf.Value : 0;
+            cStyle->has_align_self = AlignSelf.HasValue ? 1 : 0;
+            cStyle->justify_items = JustifyItems.HasValue ? (int)JustifyItems.Value : 0;
+            cStyle->has_justify_items = JustifyItems.HasValue ? 1 : 0;
+            cStyle->justify_self = JustifySelf.HasValue ? (int)JustifySelf.Value : 0;
+            cStyle->has_justify_self = JustifySelf.HasValue ? 1 : 0;
+            cStyle->align_content = AlignContent.HasValue ? (int)AlignContent.Value : 0;
+            cStyle->has_align_content = AlignContent.HasValue ? 1 : 0;
+            cStyle->justify_content = JustifyContent.HasValue ? (int)JustifyContent.Value : 0;
+            cStyle->has_justify_content = JustifyContent.HasValue ? 1 : 0;
+            cStyle->gap = Gap.ToCStruct();
+            cStyle->text_align = (int)TextAlign;
+            cStyle->flex_direction = (int)FlexDirection;
+            cStyle->flex_wrap = (int)FlexWrap;
+            cStyle->flex_basis = FlexBasis.ToCStruct();
+            cStyle->flex_grow = FlexGrow;
+            cStyle->flex_shrink = FlexShrink;
+            cStyle->grid_auto_flow = (int)GridAutoFlow;
+            cStyle->grid_row = GridRow?.ToCStruct() ?? default;
+            cStyle->grid_column = GridColumn?.ToCStruct() ?? default;
+
+            return new CStyleDisposable(cStylePtr, allocatedPointers);
         }
 
         public void Dispose()
         {
             if (_disposed) return;
+            foreach (var ptr in _allocatedPointers)
+            {
+                if (ptr != IntPtr.Zero)
+                    Marshal.FreeHGlobal(ptr);
+            }
+            _allocatedPointers.Clear();
             _disposed = true;
             GC.SuppressFinalize(this);
         }

@@ -57,7 +57,7 @@ namespace TaffySharp
         /// Sets the style for this node
         /// </summary>
         /// <param name="style"></param>
-        public void SetStyle(Style style) => Tree.SetStyle(this, style);
+        public bool SetStyle(Style style) => Tree.SetStyle(this, style);
 
         /// <summary>
         /// Adds a child to this node
